@@ -6,6 +6,6 @@ AWS-Code repository is collection of CloudFormation templates and AWS Policy of 
 
 # Using Templates/Code
 Please follow these guidelines before you use the templates/code.
-  Test your templates/code before apply it to any Prod environment.
-  Make changes in the templates/code as per your requirement.
-  Review templates/code first before apply.
+  * Test your templates/code before apply it to any Prod environment.
+  * Make changes in the templates/code as per your requirement.
+  * Review templates/code first before apply.

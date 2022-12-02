@@ -9,3 +9,6 @@ Please follow these guidelines before you use the templates/code.
   * Test your templates/code before apply it to any Prod environment.
   * Make changes in the templates/code as per your requirement.
   * Review templates/code first before apply.
+
+# LICENSE
+Distributed under the GNU General Public License v3.0 See [LICENSE](https://github.com/csbisht/AWS-Code/blob/main/LICENSE) for more information.

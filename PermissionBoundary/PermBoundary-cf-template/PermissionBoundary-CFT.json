@@ -1,0 +1,84 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Permissions Boundary Policy setup. The policy restricts IAM principals from accessing AWS billing and cost management related services. IAM principals can't alter the permissions boundary to allow their own permissions to access restricted services. IAM user can't remove permissions boundary policy once apply.",
+	 "Parameters": {
+        "PermissionsBoundaryAlias": {
+			"Type": "String",
+			"Default" : "LimitedUserPermissions",
+			"Description": "Permissions Boundary Policy name here."
+		}
+    },
+    "Resources": {
+       "PermBoundary":{
+          "Type":"AWS::IAM::ManagedPolicy",
+          "Properties":{
+             "ManagedPolicyName": { "Fn::Join": [ "-", [ { "Ref": "PermissionsBoundaryAlias" }, "PermBoundary" ] ] },
+			 "Description": "Required Permissions Boundary",
+             "PolicyDocument":{
+					"Version": "2012-10-17",
+					"Statement": [
+							{
+									"Sid": "AllowAdminAccess",
+									"Effect": "Allow",
+									"Action": "*",
+									"Resource": "*"
+							},
+							{
+									"Sid": "DenyAccessToCostAndBilling",
+									"Effect": "Deny",
+									"Action": [
+											"account:*",
+											"aws-portal:*",
+											"savingsplans:*",
+											"cur:*",
+											"ce:*"
+									],
+									"Resource": "*"
+							},
+							{
+									"Sid": "DenyPermBoundaryIAMPolicyAlteration",
+									"Effect": "Deny",
+									"Action": [
+											"iam:DeletePolicy",
+											"iam:DeletePolicyVersion",
+											"iam:CreatePolicyVersion",
+											"iam:SetDefaultPolicyVersion",
+											"iam:DeleteRole",
+											"iam:DeleteUser",
+											"iam:CreatePolicy",
+											"iam:AttachUserPolicy",
+											"iam:UpdateRole",
+											"iam:CreateUser",
+											"iam:CreateRole"
+									],
+									"Resource": "*"
+							},
+							{
+									"Sid": "DenyRemovalOfPermBoundaryFromAnyUserOrRole",
+									"Effect": "Deny",
+									"Action": [
+											"iam:DeleteUserPermissionsBoundary",
+											"iam:DeleteRolePermissionsBoundary"
+									],
+									"Resource": "*"
+							},
+							{
+									"Sid": "DenyAccessIfRequiredPermBoundaryIsNotBeingApplied",
+									"Effect": "Deny",
+									"Action": [
+											"iam:PutUserPermissionsBoundary",
+											"iam:PutRolePermissionsBoundary"
+									],
+									"Resource": "*",
+									"Condition": {
+											"StringEquals": {
+											"iam:PermissionsBoundary": { "Fn::Join": [ "", [ "arn:aws:iam::*:policy/", { "Ref": "PermissionsBoundaryAlias" }, "-PermBoundary"  ] ] }
+											}
+									}
+							}
+					]
+				}
+			}
+       }
+	}
+}

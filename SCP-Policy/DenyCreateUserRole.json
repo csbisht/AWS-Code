@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "iam:CreateUser",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:DeleteUser",
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:AttachUserPolicy",
+        "iam:UpdateRole"
+      ],
+      "Resource": [
+        "*"
+      ],
+      "Effect": "Deny",
+      "Condition": {
+        "StringNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_AWSAdministratorAcces"
+          ]
+        }
+      }
+    }
+  ]
+}

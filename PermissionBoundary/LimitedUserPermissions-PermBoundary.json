@@ -1,0 +1,64 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "*",
+            "Resource": "*",
+            "Effect": "Allow",
+            "Sid": "AllowAdminAccess"
+        },
+        {
+            "Action": [
+                "account:*",
+                "aws-portal:*",
+                "savingsplans:*",
+                "cur:*",
+                "ce:*"
+            ],
+            "Resource": "*",
+            "Effect": "Deny",
+            "Sid": "DenyAccessToCostAndBilling"
+        },
+        {
+            "Action": [
+                "iam:DeletePolicy",
+                "iam:DeletePolicyVersion",
+                "iam:CreatePolicyVersion",
+                "iam:SetDefaultPolicyVersion",
+                "iam:DeleteRole",
+                "iam:DeleteUser",
+                "iam:CreatePolicy",
+                "iam:AttachUserPolicy",
+                "iam:UpdateRole",
+                "iam:CreateUser",
+                "iam:CreateRole"
+            ],
+            "Resource": "*",
+            "Effect": "Deny",
+            "Sid": "DenyPermBoundaryIAMPolicyAlteration"
+        },
+        {
+            "Action": [
+                "iam:DeleteUserPermissionsBoundary",
+                "iam:DeleteRolePermissionsBoundary"
+            ],
+            "Resource": "*",
+            "Effect": "Deny",
+            "Sid": "DenyRemovalOfPermBoundaryFromAnyUserOrRole"
+        },
+        {
+            "Condition": {
+                "StringEquals": {
+                    "iam:PermissionsBoundary": "arn:aws:iam::*:policy/LimitedUserPermissions-PermBoundary"
+                }
+            },
+            "Action": [
+                "iam:PutUserPermissionsBoundary",
+                "iam:PutRolePermissionsBoundary"
+            ],
+            "Resource": "*",
+            "Effect": "Deny",
+            "Sid": "DenyAccessIfRequiredPermBoundaryIsNotBeingApplied"
+        }
+    ]
+}

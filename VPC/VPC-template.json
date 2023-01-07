@@ -1,0 +1,894 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AWS Template to create a VPC, 3 Pub Subnet, 3 Pvt Subnet, 3 DB Subnet, 3 Ctr Subnet, 1 Pub RT, 1 Pvt RT, 1 DB RT and 1 IGW",
+	"Parameters": {
+		"VPCName": {
+			"Type": "String",
+			"Default": "My-VPC",
+			"Description": "Please enter your VPC name."
+		},
+		"Environment": {
+			"Type": "String",
+			"Default": "Dev",
+			"Description": "Please enter your environment."
+		},
+		"VPCCidrBlock": {
+			"Type": "String",
+			"Default": "100.100.0.0/16",
+			"Description": "Please enter your VPC CIDR range."
+		},
+		"AvailabilityZone1": {
+			"Type": "String",
+			"Default": "ap-south-1a",
+			"Description": "Please enter your availablity zone."
+		},
+		"AvailabilityZone2": {
+			"Type": "String",
+			"Default": "ap-south-1b",
+			"Description": "Please enter your availablity zone."
+		},
+		"AvailabilityZone3": {
+			"Type": "String",
+			"Default": "ap-south-1c",
+			"Description": "Please enter your availablity zone."
+		},
+		"PublicSubnet1CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.2.0/23",
+			"Description": "Please enter your public-subnet-1 CidrBlock."
+		},
+		"PublicSubnet1Name": {
+			"Type": "String",
+			"Default": "My-Pub1",
+			"Description": "Please enter your public-subnet-1 name."
+		},
+		"PublicSubnet2CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.4.0/23",
+			"Description": "Please enter your public-subnet-2 CidrBlock."
+		},
+		"PublicSubnet2Name": {
+			"Type": "String",
+			"Default": "My-Pub2",
+			"Description": "Please enter your public-subnet-2 name."
+		},
+		"PublicSubnet3CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.6.0/23",
+			"Description": "Please enter your public-subnet-3 CidrBlock."
+		},
+		"PublicSubnet3Name": {
+			"Type": "String",
+			"Default": "My-Pub3",
+			"Description": "Please enter your public-subnet-3 name."
+		},
+		"PrivateAppSubnet1CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.8.0/23",
+			"Description": "Please enter your app-subnet-1 CidrBlock."
+		},
+		"PrivateAppSubnet1Name": {
+			"Type": "String",
+			"Default": "My-Pvt1",
+			"Description": "Please enter your app-subnet-1 name."
+		},
+		"PrivateAppSubnet2CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.10.0/23",
+			"Description": "Please enter your app-subnet-2 CidrBlock."
+		},
+		"PrivateAppSubnet2Name": {
+			"Type": "String",
+			"Default": "My-Pvt2",
+			"Description": "Please enter your app-subnet-2 name."
+		},
+		"PrivateAppSubnet3CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.12.0/23",
+			"Description": "Please enter your app-subnet-3 CidrBlock."
+		},
+		"PrivateAppSubnet3Name": {
+			"Type": "String",
+			"Default": "My-Pvt3",
+			"Description": "Please enter your app-subnet-3 name."
+		},
+		"DBSubnet1CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.14.0/23",
+			"Description": "Please enter your db-subnet-1 CidrBlock."
+		},
+		"DBSubnet1Name": {
+			"Type": "String",
+			"Default": "My-Db1",
+			"Description": "Please enter your db-subnet-1 name."
+		},
+		"DBSubnet2CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.16.0/23",
+			"Description": "Please enter your db-subnet-2 CidrBlock."
+		},
+		"DBSubnet2Name": {
+			"Type": "String",
+			"Default": "My-Db2",
+			"Description": "Please enter your db-subnet-2 name."
+		},
+		"DBSubnet3CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.18.0/23",
+			"Description": "Please enter your db-subnet-3 CidrBlock."
+		},
+		"DBSubnet3Name": {
+			"Type": "String",
+			"Default": "My-Db3",
+			"Description": "Please enter your db-subnet-3 name."
+		},
+		"ControllerSubnet1CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.20.0/23",
+			"Description": "Please enter your Controller-subnet-1 CidrBlock."
+		},
+		"ControllerSubnet1Name": {
+			"Type": "String",
+			"Default": "My-Ctr1",
+			"Description": "Please enter your Controller-subnet-1 name."
+		},
+		"ControllerSubnet2CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.22.0/23",
+			"Description": "Please enter your Controller-subnet-2 CidrBlock."
+		},
+		"ControllerSubnet2Name": {
+			"Type": "String",
+			"Default": "My-Ctr2",
+			"Description": "Please enter your Controller-subnet-2 name."
+		},
+		"ControllerSubnet3CIDRBlock": {
+			"Type": "String",
+			"Default": "100.100.24.0/23",
+			"Description": "Please enter your Controller-subnet-3 CidrBlock."
+		},
+		"ControllerSubnet3Name": {
+			"Type": "String",
+			"Default": "My-Ctr3",
+			"Description": "Please enter your Controller-subnet-3 name."
+		},
+		"InternetGatewayName": {
+			"Type": "String",
+			"Default": "My-IGW",
+			"Description": "Please enter your internetgateway name."
+		},
+		"PublicRouteTableName": {
+			"Type": "String",
+			"Default": "My-Pub-Rt",
+			"Description": "Please enter your public-route name."
+		},
+		"PrivateRouteTableName": {
+			"Type": "String",
+			"Default": "My-Pvt-Rt",
+			"Description": "Please enter your private-route name."
+		},
+		"DatabaseRouteTableName": {
+			"Type": "String",
+			"Default": "My-Db-Rt",
+			"Description": "Please enter your private-route name."
+		}
+	},
+	"Resources": {
+		"VPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": {
+					"Ref": "VPCCidrBlock"
+				},
+				"EnableDnsSupport": "true",
+				"EnableDnsHostnames": "true",
+				"InstanceTenancy": "default",
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "VPCName"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PublicSubnet1": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PublicSubnet1CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone1"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PublicSubnet1Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}				
+				]
+			}
+		},
+		"PublicSubnet2": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PublicSubnet2CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone2"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PublicSubnet2Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PublicSubnet3": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PublicSubnet3CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone3"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PublicSubnet3Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PrivateAppSubnet1": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PrivateAppSubnet1CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone1"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PrivateAppSubnet1Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PrivateAppSubnet2": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PrivateAppSubnet2CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone2"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PrivateAppSubnet2Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PrivateAppSubnet3": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "PrivateAppSubnet3CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone3"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PrivateAppSubnet3Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"ControllerSubnet1": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "ControllerSubnet1CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone1"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "ControllerSubnet1Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"ControllerSubnet2": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "ControllerSubnet2CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone2"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "ControllerSubnet2Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"ControllerSubnet3": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "ControllerSubnet3CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone3"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "ControllerSubnet3Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"DBSubnet1": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "DBSubnet1CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone1"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "DBSubnet1Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"DBSubnet2": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "DBSubnet2CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone2"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "DBSubnet2Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"DBSubnet3": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": {
+					"Ref": "DBSubnet3CIDRBlock"
+				},
+				"AvailabilityZone": {
+					"Ref": "AvailabilityZone3"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "DBSubnet3Name"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"InternetGateway": {
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "InternetGatewayName"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"AttachGateway": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"InternetGatewayId": {
+					"Ref": "InternetGateway"
+				}
+			}
+		},
+		"IGAttachtoRT": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {
+					"Ref": "InternetGateway"
+				},
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				}
+			}
+		},
+		"PublicRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PublicRouteTableName"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"DatabaseRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "DatabaseRouteTableName"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PrivateRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [{
+						"Key": "Name",
+						"Value": {
+							"Ref": "PrivateRouteTableName"
+						}
+					},
+					{
+						"Key": "environment",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		},
+		"PrivateSubnetRoute1": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PrivateAppSubnet1"
+				}
+			}
+		},
+		"PrivateSubnetRoute2": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PrivateAppSubnet2"
+				}
+			}
+		},
+		"PrivateSubnetRoute3": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PrivateAppSubnet3"
+				}
+			}
+		},
+		"PrivateSubnetRoute7": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "ControllerSubnet1"
+				}
+			}
+		},
+		"PrivateSubnetRoute8": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "ControllerSubnet2"
+				}
+			}
+		},
+		"PrivateSubnetRoute9": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "ControllerSubnet3"
+				}
+			}
+		},
+		"PrivateSubnetRoute4": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "DatabaseRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "DBSubnet1"
+				}
+			}
+		},
+		"PrivateSubnetRoute5": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "DatabaseRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "DBSubnet2"
+				}
+			}
+		},
+		"PrivateSubnetRoute6": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "DatabaseRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "DBSubnet3"
+				}
+			}
+		},
+		"PublicSubnetRoute1": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet1"
+				}
+			}
+		},
+		"PublicSubnetRoute2": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet2"
+				}
+			}
+		},
+		"PublicSubnetRoute3": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet3"
+				}
+			}
+		}
+	},
+	"Outputs": {
+		"VpcId": {
+			"Value": {
+				"Ref": "VPC"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-VPCID"
+				}
+			}
+		},
+		"PublicSubnet1": {
+			"Value": {
+				"Ref": "PublicSubnet1"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PublicSubnet1"
+				}
+			}
+		},
+		"PublicSubnet2": {
+			"Value": {
+				"Ref": "PublicSubnet2"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PublicSubnet2"
+				}
+			}
+		},
+		"PublicSubnet3": {
+			"Value": {
+				"Ref": "PublicSubnet3"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PublicSubnet3"
+				}
+			}
+		},
+		"PrivateAppSubnet1": {
+			"Value": {
+				"Ref": "PrivateAppSubnet1"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PrivateAppSubnet1"
+				}
+			}
+		},
+		"PrivateAppSubnet2": {
+			"Value": {
+				"Ref": "PrivateAppSubnet2"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PrivateAppSubnet2"
+				}
+			}
+		},
+		"PrivateAppSubnet3": {
+			"Value": {
+				"Ref": "PrivateAppSubnet3"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-PrivateAppSubnet3"
+				}
+			}
+		},
+		"ControllerSubnet1": {
+			"Value": {
+				"Ref": "ControllerSubnet1"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-ControllerSubnet1"
+				}
+			}
+		},
+		"ControllerSubnet2": {
+			"Value": {
+				"Ref": "ControllerSubnet2"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-ControllerSubnet2"
+				}
+			}
+		},
+		"PrivateAppSubnet3": {
+			"Value": {
+				"Ref": "PrivateAppSubnet3"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-ControllerSubnet3"
+				}
+			}
+		},
+		"DBSubnet1": {
+			"Value": {
+				"Ref": "DBSubnet1"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-DBSubnet1"
+				}
+			}
+		},
+		"DBSubnet2": {
+			"Value": {
+				"Ref": "DBSubnet2"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-DBSubnet2"
+				}
+			}
+		},
+		"DBSubnet3": {
+			"Value": {
+				"Ref": "DBSubnet3"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-DBSubnet3"
+				}
+			}
+		}
+	}
+}

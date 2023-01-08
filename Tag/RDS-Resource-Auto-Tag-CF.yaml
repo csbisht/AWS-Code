@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CloudFormation Template to add tag on rds instances and snapshots at the time of creation'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Prerequisites
+        Parameters:
+          - IsCloudTrailEnabled
+    ParameterLabels:
+      IsCloudTrailEnabled:
+        default: >-
+          Is CloudTrail already enabled in this region? CloudTrail is a
+          requirement for Cloudwatch Events. If not enabled, please enable
+          CloudTrail before proceeding.
+Parameters:
+  MyTagKey: 
+    Description: Key for Tag
+    Type: String
+  MyTagValue: 
+    Description: Value for Tag
+    Type: String
+    
+  IsCloudTrailEnabled:
+    Description: Specify if CloudTrail is enabled in the current region
+    Type: String
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+Conditions:
+  CreateResources: !Equals 
+    - !Ref IsCloudTrailEnabled
+    - 'Yes'
+Resources:
+  RDSEventRule:
+    Type: 'AWS::Events::Rule'
+    Condition: CreateResources
+    Properties:
+      Description: >-
+        Trigger a Lambda function anytime a new RDS resource is created (RDS
+        instance, Read replica, RDS Snapshot )
+      EventPattern:
+        detail-type:
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - rds.amazonaws.com
+          eventName:
+            - CreateDBInstance
+            - RestoreDBInstance
+            - CreateDBSnapshot
+            - CreateDBInstanceReadReplica
+            
+      Name: New-RDSResource-Event
+      State: ENABLED
+      Targets:
+        - Arn: !Ref ProductionAlias
+          Id: Production
+  CFAutoTag:
+    Type: 'AWS::Lambda::Function'
+    Condition: CreateResources
+    Properties:
+      Environment:
+        Variables:
+          mytagvalue: !Ref MyTagValue
+      Code:
+        ZipFile: |+
+          from __future__ import print_function
+          from datetime import datetime
+          from dateutil import tz
+          import json
+          import boto3
+          import logging
+          import time
+          import datetime
+          import os
+
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+
+
+
+          def lambda_handler(event, context):
+
+              logger.info('Event: ' + str(event))
+              print(event)
+              
+              mytagvalue = os.environ['mytagvalue']
+
+              ids = []
+
+              try:
+                  region = event['region']
+                  detail = event['detail']
+                  eventtime = detail['eventTime']
+                  eventname = detail['eventName']
+                  arn = detail['userIdentity']['arn']
+                  principal = detail['userIdentity']['principalId']
+                  userType = detail['userIdentity']['type']
+
+                  creation_time = datetime.datetime.strptime(eventtime, '%Y-%m-%dT%H:%M:%SZ').strftime('%d-%m-%Y %H:%M:%S')
+
+                  print(creation_time)
+
+                  if userType == 'IAMUser':
+                      user = detail['userIdentity']['userName']
+
+                  else:
+                      user = principal.split(':')[1]
+
+
+                  logger.info('principalId: ' + str(principal))
+                  logger.info('region: ' + str(region))
+                  logger.info('eventName: ' + str(eventname))
+                  logger.info('creation_time: ' + str(creation_time))
+                  logger.info('detail: ' + str(detail))
+
+                  if not detail['responseElements']:
+                      logger.warning('Not responseElements found')
+                      if detail['errorCode']:
+                          logger.error('errorCode: ' + detail['errorCode'])
+                      if detail['errorMessage']:
+                          logger.error('errorMessage: ' + detail['errorMessage'])
+                      return False
+
+                  rds = boto3.client('rds')
+
+                  if eventname == 'CreateDBInstance':
+                      ids.append(detail['responseElements']['dBInstanceArn'])
+                      logger.info(ids)
+
+                  elif eventname == 'CreateDBSnapshot':
+                      ids.append(detail['responseElements']['dBSnapshotArn'])
+                      logger.info(ids)
+                      
+                  elif eventname == 'RestoreDBInstance':
+                      ids.append(detail['responseElements']['dBInstanceArn'])
+                      logger.info(ids)
+
+                  elif eventname == 'CreateDBInstanceReadReplica':
+                      ids.append(detail['responseElements']['dBInstanceArn'])
+                      logger.info(ids)
+
+                  else:
+                      logger.warning('Not supported action')
+
+                  if ids:
+                      for resourceid in ids:
+                          print('Tagging resource ' + resourceid)
+                      rds.add_tags_to_resource(ResourceName=resourceid, Tags=[{'Key': 'CreatedByUser', 'Value': user}, {'Key': mytagkey, 'Value': mytagvalue}, {'Key': 'CreationTime', 'Value': creation_time}])
+
+                  logger.info(' Remaining time (ms): ' + str(context.get_remaining_time_in_millis()) + '')
+                  return True
+              except Exception as e:
+                  logger.error('Something went wrong: ' + str(e))
+                  return False
+
+      Description: This function tags RDS Resources in response to Cloudwatch Events for Resource Creation.
+      Handler: index.lambda_handler
+      Role: !GetAtt 
+        - LambdaAutoTagRole
+        - Arn
+      Runtime: python3.9
+      Timeout: '300'
+  StableVersion:
+    Type: 'AWS::Lambda::Version'
+    Condition: CreateResources
+    Properties:
+      FunctionName: !Ref CFAutoTag
+      Description: Stable version
+  ProductionAlias:
+    Type: 'AWS::Lambda::Alias'
+    Condition: CreateResources
+    Properties:
+      FunctionName: !Ref CFAutoTag
+      FunctionVersion: $LATEST
+      Name: PROD
+  PermissionForEventsToInvokeLambda:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref ProductionAlias
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt 
+        - RDSEventRule
+        - Arn
+  LambdaAutoTagRole:
+    Type: 'AWS::IAM::Role'
+    Condition: CreateResources
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LambdaTagRDSResources
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: Stmt1458923097000
+                Effect: Allow
+                Action:
+                  - 'cloudtrail:LookupEvents'
+                Resource:
+                  - '*'
+              - Sid: Stmt1458923121000
+                Effect: Allow
+                Action:
+                  - 'rds:AddTagsToResource'
+                  - 'rds:Describe*'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - '*'
+  
+Outputs: {}

@@ -1,0 +1,67 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Cross Account Access setup",
+    "Parameters": {
+        "AWSAccountId": {
+			"Type": "Number",
+			"Default" : "635806782650",
+			"Description": "Please enter your master account AWS ID here."
+			},
+		"CustomerAccountAlias": {
+			"Type": "String",
+			"Default" : "CrossRoleAccount",
+			"Description": "Please enter Customer account Alias name here."
+			}
+    },
+    "Resources": {
+        "CrossAccountRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+			"RoleName": { "Fn::Join": [ "-", [ "My", { "Ref": "CustomerAccountAlias" }, "admin-cross-role" ] ] },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": {
+                                    "Fn::Sub": "arn:aws:iam::${AWSAccountId}:root"
+                                }
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+       "CrossAccountPolicy":{
+          "Type":"AWS::IAM::Policy",
+          "Properties":{
+             "PolicyName":"AdministratorAccess",
+             "PolicyDocument":{
+                 "Version": "2012-10-17",
+                    "Statement":[
+                   {
+                      "Effect":"Allow",
+                      "Action": "*",
+                      "Resource":  "*"
+                   }
+                ]
+             },
+             "Roles":[
+                {
+                   "Ref":"CrossAccountRole"
+                }
+             ]
+          }
+       }
+	},
+	"Outputs": {
+		"CrossAccountRole": {
+		"Value": {
+			 "Fn::GetAtt" : ["CrossAccountRole", "Arn"] 
+		}
+	}
+}
+}

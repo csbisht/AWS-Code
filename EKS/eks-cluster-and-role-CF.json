@@ -1,0 +1,128 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS Template to create EKS Cluster",
+    "Parameters": {
+        "VPC": {
+            "Description": "Select the VPC",
+            "Type": "AWS::EC2::VPC::Id",
+            "Default": "vpc-d13a73b8"
+        },
+        "EksClusterSubnetIds": {
+            "Description": "Select  3 private subnets for eks cluster.",
+            "Type": "List<AWS::EC2::Subnet::Id>",
+            "Default": " "
+        },
+        "EnvironmentName": {
+            "Description": "Please enter your environment",
+            "Type": "String",
+            "Default": "Dev"
+        },
+        "EksClusterName": {
+            "Description": "Name of Eks cluster",
+            "Type": "String",
+            "Default": "My-eks-cluster"
+        },
+        "EksVersion": {
+            "Description": "Version of Eks",
+            "Type": "String",
+            "Default": "1.24"
+        },
+		"EksClusterRoleName": {
+            "Description": "Type EKS cluster role Name (it will create a new role for cluster, please don't give existing role)",
+            "Type": "String",
+            "Default": "DevEksClusterRole"
+        }
+    },
+    "Resources": {
+        "EksClusterSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Eks cluster instance security group",
+                "GroupName": {
+                    "Fn::Sub": "${AWS::StackName}-SG"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Environment",
+                        "Value": {
+                            "Ref": "EnvironmentName"
+                        }
+                    }
+                ]
+            }
+        },
+        "EksCluster": {
+            "Type": "AWS::EKS::Cluster",
+            "Properties": {
+                "Name": {
+                    "Ref": "EksClusterName"
+                },
+                "Version": {
+                    "Ref": "EksVersion"
+                },
+				 "RoleArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:iam::",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":role/",
+                            {
+                                "Ref": "EksClusterRoleName"
+                            }
+                        ]
+                    ]
+                },
+                "ResourcesVpcConfig": {
+                    "SecurityGroupIds": [{"Ref": "EksClusterSG"}],
+                    "SubnetIds": {"Ref": "EksClusterSubnetIds"},
+					"EndpointPublicAccess": false,
+					"EndpointPrivateAccess": true					
+                }
+            },
+			"DependsOn": "EksClusterRole"		
+        },
+        "EksClusterRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+				"RoleName": {"Ref": "EksClusterRoleName"},
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "eks.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+                    "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+                    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "DevEksClusterRole"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "Dev"
+                    }
+                ]
+            }
+        }		
+    }
+}

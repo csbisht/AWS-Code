@@ -1,0 +1,149 @@
+{
+	"Description": "It will create instace launch template.",
+	"Parameters": {
+		"VPC": {
+			"Description": "Please Select the VPCID",
+			"Type": "AWS::EC2::VPC::Id",
+			"Default": ""
+		},
+		"AppEnvType": {
+			"Description": "Type of app environment",
+			"Type": "String",
+			"Default": "Dev"
+		},
+		"Project": {
+			"Description": "Project Description ",
+			"Type": "String",
+			"Default": "testproject"
+		},
+		"KeyName": {
+			"Description": "Type EC2 instance key ID",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"Default": ""
+		},
+		"Ec2RootVolumeSize": {
+			"Description": "RootVolumeSize minimum value in GB",
+			"Type": "Number",
+			"Default": "100"
+		},
+		"Roles": {
+			"Description": "Enter the Role Name.",
+			"Type": "String",
+			"Default": "DevEksClusterRole"
+		},
+		"ClusterName": {
+			"Description": "EKS Cluster Name",
+			"Type": "String",
+			"Default": "My-eks-cluster"
+		},
+		"KmsKeyId": {
+            "Type": "String",
+            "Default": "arn:aws:kms:ap-south-1:635806782650:key/73f4b5c5-5b34-4ef4-bac3-ae39f733db8f"
+        },
+		"SecurityGroupIDs": {
+            "Description": "Select  security group for eks node.",
+			"Type": "List<AWS::EC2::SecurityGroup::Id>",
+            "Default": " "
+        }
+	},
+	"Mappings": {
+		"RegionMap": {
+			"ap-south-1": {
+				"HVM64": "ami-0955e493d0c4b28f6"
+			}
+		}
+	},
+	"Resources": {
+		"LaunchTemplate": {
+			"Type": "AWS::EC2::LaunchTemplate",
+			"Properties": {
+				"LaunchTemplateName": {
+					"Fn::Sub": "${AWS::StackName}-launch-template"
+				},
+				"LaunchTemplateData": {
+					"BlockDeviceMappings": [{
+						"DeviceName": "/dev/xvda",
+						"Ebs": {
+							"DeleteOnTermination": "true",
+							"Encrypted": "true",
+							"KmsKeyId": {
+								"Ref": "KmsKeyId"
+							},
+							"VolumeSize": {
+								"Ref": "Ec2RootVolumeSize"
+							},
+							"VolumeType": "gp3"
+						}
+					}],
+					"TagSpecifications": [{
+						"ResourceType": "instance",
+						"Tags": [{
+								"Key": "Name",
+								"Value": {
+									"Fn::Sub": "${ClusterName}-testmngecflnode"
+								}
+							},
+							{
+								"Key": "KubernetesCluster",
+								"Value": {
+									"Ref": "ClusterName"
+								}
+							},
+							{
+								"Key": "AppEnvType",
+								"Value": {
+									"Ref": "AppEnvType"
+								}
+							},
+							{
+								"Key": "Project",
+								"Value": {
+									"Ref": "Project"
+								}
+							},
+							{
+								"Key": {
+									"Fn::Sub": "kubernetes.io/cluster/${ClusterName}"
+								},
+								"Value": "owned"
+							}
+
+						]
+					}],
+					"UserData": {
+						"Fn::Base64": {
+							"Fn::Sub": "#!/bin/bash\nset -o xtrace\n/etc/eks/bootstrap.sh ${ClusterName} \n/opt/aws/bin/cfn-signal --exit-code $? \\\n        --stack  ${AWS::StackName} \\\n        --resource NodeGroup  \\\n        --region ${AWS::Region}\n   \n"
+						}
+					},
+					"ImageId": {
+						"Fn::FindInMap": [
+							"RegionMap",
+							{
+								"Ref": "AWS::Region"
+							},
+							"HVM64"
+						]
+					},
+					"KeyName": {
+						"Ref": "KeyName"
+					},
+					"SecurityGroupIds" : {"Ref": "SecurityGroupIDs"},
+					"Monitoring": {
+						"Enabled": true
+						}
+
+					}
+				}
+			}
+
+		},
+		"Outputs": {
+			"LaunchTemplate": {
+				"Description": "the newly created launch config",
+				"Value": {
+					"Ref": "LaunchTemplate"
+				}
+			}
+		},
+		"AWSTemplateFormatVersion": "2010-09-09"
+	}

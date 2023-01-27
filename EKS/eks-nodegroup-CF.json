@@ -1,0 +1,83 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS Template to create EKS Cluster",
+    "Parameters": {
+        "LaunchTemplate": {
+            "Description": "Please enter Launch Template Name",
+            "Type": "String",
+            "Default": ""
+        },
+		"LTVersion": {
+            "Description": "Please enter Launch Template Version",
+            "Type": "String",
+            "Default": ""
+        },
+        "NGSubnetIds": {
+            "Description": "Select  3 private subnets for eks NodeGroup.",
+            "Type": "List<AWS::EC2::Subnet::Id>",
+            "Default": " "
+        },
+        "NodegroupName": {
+            "Description": "Please enter your NodeGroup name",
+            "Type": "String",
+            "Default": "Dev-NodeGroup"
+        },
+        "EksClusterName": {
+            "Description": "Name of Eks cluster Name",
+            "Type": "String",
+            "Default": "My-eks-cluster"
+        },
+        "InstanceTypes": {
+            "Description": "Select instane type for NodeGroup",
+            "Type": "String",
+            "Default": "t3a.small"
+        },
+		"NGRoleName": {
+            "Description": "Select NodeGroup role Name",
+            "Type": "String",
+            "Default": ""
+        }
+    },
+    "Resources": {
+        "EKSNodegroup": {
+            "Type": "AWS::EKS::Nodegroup",
+            "Properties": {
+                "ClusterName": {"Ref": "EksClusterName"},
+				"NodegroupName" : {"Ref": "NodegroupName"},
+				"NodeRole": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:iam::",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":role/",
+                            {
+                                "Ref": "NGRoleName"
+                            }
+                        ]
+                    ]
+                },
+                "CapacityType" : "ON_DEMAND",
+				"UpdateConfig" : {
+					"MaxUnavailable" : "1"
+				},	 
+                "InstanceTypes" : [{"Ref": "InstanceTypes"}],	
+                "LaunchTemplate" : {
+					"Name" : {"Ref": "LaunchTemplate"},
+					"Version" : {"Ref": "LTVersion"}
+				},	     
+                "ScalingConfig": {
+                    "MinSize": 1,
+                    "DesiredSize": 2,
+                    "MaxSize": 3
+                },
+                "Labels": {
+                    "env": "app"
+                },
+                "Subnets": {"Ref": "NGSubnetIds"}
+            }
+        }
+    }
+}
